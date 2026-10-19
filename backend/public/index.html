@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synapse — Dashboard</title>
+  <meta name="description" content="Synapse dashboard — manage your AI memory layer, API keys, and browser extension.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+
+<body>
+
+  <!-- ================================================================
+       SERVICE SELECTOR (shown after login, before choosing a console)
+       ================================================================ -->
+  <div class="service-selector" id="serviceSelector" style="display: none;">
+    <div class="service-selector-header">
+      <h2>Welcome to Synapse</h2>
+      <p>Choose how you want to use Synapse today. You can switch between consoles anytime.</p>
+    </div>
+    <div class="service-cards">
+      <!-- Developer Console Card -->
+      <div class="service-card" id="selectDevConsole">
+        <div class="service-card-icon">⚡</div>
+        <h3>Developer</h3>
+        <p>Build AI with persistent memory. Create API keys, manage chatbots, monitor usage, and explore your bot's
+          knowledge graph.</p>
+        <div class="service-card-arrow">Open Console →</div>
+      </div>
+      <!-- Extension Console Card -->
+      <div class="service-card" id="selectExtConsole">
+        <div class="service-card-icon">🧠</div>
+        <h3>Personal / Extension</h3>
+        <p>Your second brain. Manage memories saved from your browser extension, search your knowledge base, and view
+          your memory graph.</p>
+        <div class="service-card-arrow">Open Console →</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       MAIN APP (shown when a console is selected)
+       ================================================================ -->
+  <div class="app-container" id="appContainer">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="appSidebar">
+      <div class="brand">
+        <div class="logo-orb">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6l2.1 2.1M5.6 18.4l2.1-2.1m8.6-8.6l2.1-2.1" />
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>Synapse</h1>
+          <span class="badge-tag" id="consoleBadge">Developer</span>
+        </div>
+        <a href="/" class="landing-pill-btn" title="Back to Landing Page">&larr; Home</a>
+      </div>
+
+      <!-- Account / Auth Status Card -->
+      <div class="auth-card" id="authCard">
+        <!-- Logged Out View -->
+        <div class="auth-logged-out" id="authLoggedOutView">
+          <div class="auth-status-row">
+            <span class="auth-dot guest"></span>
+            <span class="auth-status-label">Not signed in</span>
+          </div>
+          <button class="btn btn-primary btn-sm btn-block" id="openAuthModalBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+              <polyline points="10 17 15 12 10 7" />
+              <line x1="15" y1="12" x2="3" y2="12" />
+            </svg>
+            Sign In / Register
+          </button>
+        </div>
+
+        <!-- Logged In View -->
+        <div class="auth-logged-in" id="authLoggedInView" style="display: none;">
+          <div class="user-profile-header">
+            <div class="user-avatar" id="userAvatar">U</div>
+            <div class="user-meta">
+              <div class="user-name" id="userNameText">User Name</div>
+              <div class="user-email" id="userEmailText">user@example.com</div>
+            </div>
+          </div>
+          <div class="auth-actions-row">
+            <span class="auth-badge-success">● Connected</span>
+            <button class="btn-link-danger" id="logoutBtn" title="Log out">Log Out</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Switch Workspace (Back to Welcome Screen) -->
+      <div class="switch-console-wrapper" id="switchConsoleWrapper">
+        <button class="btn-switch-console" id="switchConsoleBtn" title="Back to workspace selector">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+          <span>Switch Workspace</span>
+        </button>
+      </div>
+
+      <!-- Active Key Indicator (Developer Console) -->
+      <div class="active-key-card" id="activeKeyCard" style="display: none;">
+        <div class="active-key-label">Active API Key</div>
+        <div class="active-key-name" id="activeKeyName">—</div>
+        <button class="btn btn-secondary btn-xs" id="switchKeyBtn">← All Keys</button>
+      </div>
+
+      <!-- Navigation Tabs (Developer Console) -->
+      <nav class="nav-tabs" id="devNavTabs">
+        <button class="nav-btn active" id="tabApiKeysBtn" data-tab="apikeys">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 2l-2 2m-1.5 1.5L14 9l-3-3 2.5-2.5a2.121 2.121 0 0 1 3 0l4.5 4.5" />
+            <circle cx="7.5" cy="16.5" r="4.5" />
+            <path d="m11 13 4 4" />
+          </svg>
+          <span>My API Keys</span>
+          <span class="tab-badge" id="apiKeysCountBadge">0</span>
+        </button>
+        <button class="nav-btn" id="tabVaultBtn" data-tab="vault" style="display:none;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <ellipse cx="12" cy="5" rx="9" ry="3" />
+            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+          </svg>
+          <span>Memory Vault</span>
+          <span class="tab-badge" id="memoryCountBadge">0</span>
+        </button>
+        <button class="nav-btn" id="tabGraphBtn" data-tab="graph" style="display:none;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="6" cy="6" r="2" />
+            <circle cx="18" cy="6" r="2" />
+            <circle cx="12" cy="18" r="2" />
+            <line x1="7.5" y1="7.5" x2="10.5" y2="16.5" />
+            <line x1="16.5" y1="7.5" x2="13.5" y2="16.5" />
+            <line x1="8" y1="6" x2="16" y2="6" />
+          </svg>
+          <span>Graph View</span>
+        </button>
+        <button class="nav-btn" id="tabSettingsBtn" data-tab="settings">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+          <span>Settings</span>
+        </button>
+      </nav>
+
+      <!-- Navigation Tabs (Extension Console) -->
+      <nav class="nav-tabs" id="extNavTabs" style="display: none;">
+        <button class="nav-btn active" data-tab="ext-memories" id="tabExtMemoriesBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <ellipse cx="12" cy="5" rx="9" ry="3" />
+            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+          </svg>
+          <span>My Memories</span>
+          <span class="tab-badge" id="extMemoryCountBadge">0</span>
+        </button>
+        <button class="nav-btn" data-tab="ext-search" id="tabExtSearchBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <span>Search</span>
+        </button>
+        <button class="nav-btn" data-tab="ext-graph" id="tabExtGraphBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="6" cy="6" r="2" />
+            <circle cx="18" cy="6" r="2" />
+            <circle cx="12" cy="18" r="2" />
+            <line x1="7.5" y1="7.5" x2="10.5" y2="16.5" />
+            <line x1="16.5" y1="7.5" x2="13.5" y2="16.5" />
+            <line x1="8" y1="6" x2="16" y2="6" />
+          </svg>
+          <span>Graph View</span>
+        </button>
+        <button class="nav-btn" data-tab="ext-download" id="tabExtDownloadBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          <span>Download Extension</span>
+        </button>
+        <button class="nav-btn" data-tab="settings" id="tabExtSettingsBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+          <span>Settings</span>
+        </button>
+      </nav>
+
+      <!-- System Status Footer -->
+      <div class="system-status-card">
+        <div class="status-indicator">
+          <span class="pulse-dot"></span>
+          <span id="backendStatusText">Backend Online</span>
+        </div>
+        <div class="status-details">
+          <div class="meta-row">
+            <span>Vector Engine:</span>
+            <strong>bge-small-en-v1.5</strong>
+          </div>
+          <div class="meta-row">
+            <span>Database:</span>
+            <strong>pgvector</strong>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+
+      <!-- ===== DEVELOPER CONSOLE PANELS ===== -->
+
+      <!-- 1. API KEYS TAB (Default developer view) -->
+      <section class="tab-panel active" id="apikeysPanel">
+        <header class="panel-header">
+          <div class="panel-title">
+            <h2>API Keys</h2>
+            <p>Generate keys for your chatbots and external integrations.</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-primary btn-sm" id="openGenerateKeyModalBtn">+ Generate Key</button>
+          </div>
+        </header>
+
+        <div class="integration-banner">
+          <div class="banner-icon">⚡</div>
+          <div class="banner-text">
+            <strong>Automatic Scope Tracking</strong>
+            External apps using <code>x-api-key: syn_...</code> are automatically tracked and isolated to their own
+            memory scope.
+          </div>
+        </div>
+
+        <div class="keys-section">
+          <h3 class="section-subtitle">Active Keys</h3>
+          <div class="keys-grid" id="keysGrid">
+            <div class="loading-state">Loading API keys...</div>
+          </div>
+        </div>
+
+        <div class="integration-guide-card">
+          <h3>Integration Guide</h3>
+          <p class="guide-description">Include your API key in the <code>x-api-key</code> HTTP header:</p>
+          <div class="code-snippet-box">
+            <pre><code>curl -X POST http://localhost:5000/chat \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: &lt;YOUR_API_KEY&gt;" \
+  -d '{"question": "What did I save about ML?"}'</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. MEMORY VAULT TAB -->
+      <section class="tab-panel" id="vaultPanel">
+        <header class="panel-header">
+          <div class="panel-title">
+            <h2>Memory Vault</h2>
+            <p>All saved content stored in PostgreSQL pgvector.</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-primary btn-sm" id="openAddModalBtn">+ Add Memory</button>
+          </div>
+        </header>
+
+        <div class="filter-bar">
+          <div class="filter-chips">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="webpage">Webpages</button>
+            <button class="filter-btn" data-filter="note">Notes</button>
+            <button class="filter-btn" data-filter="selection">Selections</button>
+          </div>
+          <button class="btn btn-secondary btn-xs" id="refreshMemoriesBtn">↻ Refresh</button>
+        </div>
+
+        <div class="memory-grid" id="memoryGrid">
+          <div class="loading-state">Loading memories...</div>
+        </div>
+      </section>
+
+      <!-- 3. GRAPH VIEW TAB -->
+      <section class="tab-panel" id="graphPanel">
+        <header class="panel-header">
+          <div class="panel-title">
+            <h2>Memory Graph</h2>
+            <p>Visualize semantic relationships between your memories.</p>
+          </div>
+          <div class="header-actions">
+            <label class="threshold-label">Similarity: <span id="graphThresholdLabel">0.78</span></label>
+            <input type="range" id="graphThresholdSlider" min="50" max="95" value="78" class="slider-sm">
+            <button class="btn btn-primary btn-sm" id="loadGraphBtn">Load Graph</button>
+          </div>
+        </header>
+        <div class="graph-container" id="graphContainer">
+          <div class="empty-state" id="graphEmptyState">Click "Load Graph" to visualize memory connections.</div>
+          <canvas id="graphCanvas"></canvas>
+        </div>
+        <div class="graph-stats" id="graphStats" style="display:none;">
+          <span id="graphNodeCount">0</span> memories · <span id="graphEdgeCount">0</span> connections
+        </div>
+      </section>
+
+      <!-- 6. SETTINGS TAB (shared) -->
+      <section class="tab-panel" id="settingsPanel">
+        <header class="panel-header">
+          <div class="panel-title">
+            <h2>Settings</h2>
+            <p>Account information and system status.</p>
+          </div>
+        </header>
+
+        <div class="settings-grid">
+          <div class="settings-card">
+            <h3>Account</h3>
+            <div class="settings-row">
+              <span class="settings-label">Email</span>
+              <span class="settings-value" id="settingsEmail">Not logged in</span>
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">Name</span>
+              <span class="settings-value" id="settingsName">—</span>
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">Auth</span>
+              <span class="settings-value" id="settingsAuthMode">Guest</span>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <h3>System</h3>
+            <div class="settings-row">
+              <span class="settings-label">Embeddings</span>
+              <span class="settings-value">bge-small-en-v1.5 (384d)</span>
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">QA Model</span>
+              <span class="settings-value">DistilBERT</span>
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">LLM</span>
+              <span class="settings-value" id="settingsLLMEngine">Checking...</span>
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">Database</span>
+              <span class="settings-value">PostgreSQL + pgvector</span>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <h3>Data</h3>
+            <div class="settings-row">
+              <span class="settings-label">Memories</span>
+              <span class="settings-value" id="settingsMemoryCount">—</span>
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">Console</span>
+              <span class="settings-value" id="settingsConsoleType">—</span>
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">Scope</span>
+              <span class="settings-value" id="settingsActiveScope">—</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== EXTENSION CONSOLE PANELS ===== -->
+
+      <!-- EXT: My Memories -->
+      <section class="tab-panel" id="extMemoriesPanel">
+        <header class="panel-header">
+          <div class="panel-title">
+            <h2>My Memories</h2>
+            <p>Everything saved from your browser extension.</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-primary btn-sm" id="extOpenAddModalBtn">+ Add Memory</button>
+          </div>
+        </header>
+
+        <div class="filter-bar">
+          <div class="filter-chips" id="extFilterChips">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="webpage">Webpages</button>
+            <button class="filter-btn" data-filter="note">Notes</button>
+            <button class="filter-btn" data-filter="selection">Selections</button>
+          </div>
+          <button class="btn btn-secondary btn-xs" id="extRefreshMemoriesBtn">↻ Refresh</button>
+        </div>
+
+        <div class="memory-grid" id="extMemoryGrid">
+          <div class="loading-state">Loading memories...</div>
+        </div>
+      </section>
+
+      <!-- EXT: Search -->
+      <section class="tab-panel" id="extSearchPanel">
+        <header class="panel-header">
+          <div class="panel-title">
+            <h2>Search Memories</h2>
+            <p>Semantic search across all your saved knowledge.</p>
+          </div>
+        </header>
+
+        <div class="search-box-card">
+          <div class="search-input-group">
+            <input type="text" id="extVectorSearchInput" placeholder="Search your knowledge base...">
+            <button class="btn btn-primary" id="extRunSearchBtn">Search</button>
+          </div>
+          <div class="search-options">
+            <label>Top K: <span id="extTopKLabel">5</span></label>
+            <input type="range" id="extTopKSlider" min="1" max="10" value="5">
+          </div>
+        </div>
+
+        <div class="search-results-list" id="extSearchResultsList">
+          <div class="empty-state">Enter a query to search your memories.</div>
+        </div>
+      </section>
+
+      <!-- EXT: Graph View -->
+      <section class="tab-panel" id="extGraphPanel">
+        <header class="panel-header">
+          <div class="panel-title">
+            <h2>Memory Graph</h2>
+            <p>Visualize your personal knowledge network.</p>
+          </div>
+          <div class="header-actions">
+            <label class="threshold-label">Similarity: <span id="extGraphThresholdLabel">0.78</span></label>
+            <input type="range" id="extGraphThresholdSlider" min="50" max="95" value="78" class="slider-sm">
+            <button class="btn btn-primary btn-sm" id="extLoadGraphBtn">Load Graph</button>
+          </div>
+        </header>
+        <div class="graph-container" id="extGraphContainer">
+          <div class="empty-state" id="extGraphEmptyState">Click "Load Graph" to visualize your memory connections.
+          </div>
+        </div>
+        <div class="graph-stats" id="extGraphStats" style="display:none;">
+          <span id="extGraphNodeCount">0</span> memories · <span id="extGraphEdgeCount">0</span> connections
+        </div>
+      </section>
+
+      <!-- EXT: Download Extension -->
+      <section class="tab-panel" id="extDownloadPanel">
+        <header class="panel-header">
+          <div class="panel-title">
+            <h2>Browser Extension</h2>
+            <p>Install the Synapse extension to save web content directly to your memory layer.</p>
+          </div>
+        </header>
+
+        <div class="download-card">
+          <h3>Synapse Browser Extension</h3>
+          <p>Save any webpage, text selection, or note directly to your Synapse memory vault with one click.</p>
+
+          <div class="download-steps">
+            <div class="download-step">
+              <span class="download-step-num">1</span>
+              <span>Click the button below to download <strong>synapse-extension.zip</strong> and unzip it on your
+                computer.</span>
+            </div>
+            <div class="download-step">
+              <span class="download-step-num">2</span>
+              <span>Open Chrome (or Edge/Brave) and go to <code>chrome://extensions</code>. Enable <strong>"Developer
+                  mode"</strong> in the top-right corner.</span>
+            </div>
+            <div class="download-step">
+              <span class="download-step-num">3</span>
+              <span>Click <strong>"Load unpacked"</strong> and select the extracted extension folder.</span>
+            </div>
+            <div class="download-step">
+              <span class="download-step-num">4</span>
+              <span>Click the <strong>Synapse</strong> icon in your toolbar, sign in or create an account, and start
+                capturing notes & webpages!</span>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 16px;">
+            <a href="/downloads/synapse-extension.zip" download="synapse-extension.zip" class="btn btn-primary"
+              id="downloadExtensionBtn" style="text-decoration: none;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Download Extension (.zip)
+            </a>
+            <button class="btn btn-secondary" id="openExtConsoleBtn">I've Installed the Extension → Open
+              Console</button>
+            <span style="font-size: 12px; color: var(--text-dim);">Version 1.0.0 · Chrome / Edge / Brave MV3</span>
+          </div>
+        </div>
+
+        <div class="integration-guide-card" style="margin-top: 20px;">
+          <h3>How It Works</h3>
+          <p class="guide-description">The extension saves content to your personal memory scope using your Gmail/email
+            as the primary key. All memories are embedded as vectors and stored in PostgreSQL pgvector for semantic
+            retrieval.</p>
+          <div class="code-snippet-box">
+            <pre><code>// Extension saves to your personal scope:
+POST /memory/add
+{
+  "user_id": "extension(your@gmail.com)",
+  "content": "Selected text or page content",
+  "source_type": "webpage",
+  "source_url": "https://..."
+}</code></pre>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- AUTH MODAL (Google Authentication Only) -->
+  <div class="modal-backdrop" id="authModal">
+    <div class="modal-card auth-modal-card" style="max-width: 420px; text-align: center;">
+      <div class="modal-header" style="justify-content: space-between; align-items: center; border-bottom: none; padding-bottom: 0;">
+        <h3 id="authModalTitle" style="font-size: 1.15rem; font-weight: 700; margin: 0;">Sign In to Synapse</h3>
+        <button class="modal-close" id="closeAuthModalBtn">&times;</button>
+      </div>
+
+      <div class="auth-alert" id="authAlert" style="display: none; margin-top: 14px;"></div>
+
+      <!-- MAIN VIEW: GOOGLE SIGN-IN ONLY -->
+      <div id="googleAuthMainView" style="padding-top: 10px;">
+        <div style="width: 52px; height: 52px; border-radius: 50%; background: var(--bg-card-hover); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; border: 1px solid var(--border-light);">
+          <svg width="26" height="26" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+        </div>
+
+        <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 22px;">
+          Connect your Google Account to automatically access your memory vault, API keys, and browser extension.
+        </p>
+
+        <!-- Official Google Button target -->
+        <div id="googleSignInBtn" style="display: flex; justify-content: center; width: 100%; min-height: 44px; margin-bottom: 12px;"></div>
+
+        <!-- Styled fallback button if GSI button is loading or awaiting client id -->
+        <button type="button" class="btn-google-action" id="styledGoogleBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span>Sign in with Google</span>
+        </button>
+
+        <div style="margin-top: 16px; padding: 10px 12px; border-radius: var(--radius-sm); background: rgba(0,0,0,0.03); border: 1px solid var(--border-light); font-size: 0.76rem; color: var(--text-muted); line-height: 1.4;">
+          🔒 Direct password login disabled for security. Single Sign-On (Google) is strictly enforced.
+        </div>
+
+        <div style="margin-top: 18px; font-size: 0.82rem;">
+          <a href="#" id="openGoogleRecoveryLink" style="color: var(--text-muted); text-decoration: none; font-weight: 500;">
+            Forgot password or need help signing in?
+          </a>
+        </div>
+      </div>
+
+      <!-- SECONDARY VIEW: GOOGLE FORGOT PASSWORD / ACCOUNT RECOVERY -->
+      <div id="googleRecoveryView" style="display: none; padding-top: 10px; text-align: left;">
+        <div style="background: var(--bg-card-hover); border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px;">
+          <h4 style="margin: 0 0 6px; font-size: 0.92rem; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+            <span>🔑</span> Google Account Password Recovery
+          </h4>
+          <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; margin: 0;">
+            Because you sign in with Google, Synapse never sees or stores your password. If you forgot your Google password or are locked out of your account, you can recover it directly via Google's official recovery portal.
+          </p>
+        </div>
+
+        <a href="https://accounts.google.com/signin/recovery" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-block" style="text-decoration: none; text-align: center; display: flex; justify-content: center; align-items: center; gap: 8px; font-weight: 600;">
+          <span>Open Google Account Recovery</span>
+          <span>↗</span>
+        </a>
+
+        <div style="margin-top: 16px; text-align: center;">
+          <a href="#" id="backFromRecoveryLink" style="font-size: 0.82rem; color: var(--text-main); font-weight: 600; text-decoration: none;">
+            ← Back to Google Sign In
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- GENERATE API KEY MODAL -->
+  <div class="modal-backdrop" id="generateKeyModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Generate API Key</h3>
+        <button class="modal-close" id="closeGenerateKeyModalBtn">&times;</button>
+      </div>
+
+      <form id="generateKeyForm">
+        <div class="form-group">
+          <label for="keyAppNameInput">Application / Bot Name</label>
+          <input type="text" id="keyAppNameInput" required placeholder="e.g. Discord Memory Bot">
+        </div>
+        <div class="form-group">
+          <label>Bound Scope</label>
+          <input type="text" id="keyTargetScopeInput" readonly disabled>
+          <span class="helper-text">This key will be bound to your active user scope.</span>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelKeyModalBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="submitGenerateKeyBtn">Generate</button>
+        </div>
+      </form>
+
+      <div id="keyCreatedResult" style="display: none;">
+        <div class="key-success-alert">
+          <strong>⚠ Save your API key now!</strong>
+          <p>This key will not be shown again.</p>
+        </div>
+        <div class="key-display-box">
+          <input type="text" id="plainKeyDisplayInput" readonly>
+          <button class="btn btn-primary btn-sm" id="copyKeyBtn">Copy</button>
+        </div>
+        <div class="modal-footer" style="display: flex; flex-direction: column; gap: 8px;">
+          <button type="button" class="btn btn-primary btn-block" id="openNewKeyConsoleBtn">Open Console for this Key
+            →</button>
+          <button type="button" class="btn btn-secondary btn-block" id="doneKeyModalBtn">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Memory Modal -->
+  <div class="modal-backdrop" id="addMemoryModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Save New Memory</h3>
+        <button class="modal-close" id="closeModalBtn">&times;</button>
+      </div>
+      <form id="addMemoryForm">
+        <div class="form-group">
+          <label for="memoryContent">Content</label>
+          <textarea id="memoryContent" rows="5" required
+            placeholder="Type something to store in your memory..."></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="memoryType">Source Type</label>
+            <select id="memoryType">
+              <option value="note">Note</option>
+              <option value="webpage">Webpage</option>
+              <option value="selection">Selection</option>
+              <option value="chat">Chat</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="memoryUrl">Source URL</label>
+            <input type="url" id="memoryUrl" placeholder="https://...">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelModalBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="submitMemoryBtn">Save & Embed</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>

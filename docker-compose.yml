@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # PostgreSQL with pgvector extension
+  synapse-db:
+    image: pgvector/pgvector:pg16
+    container_name: synapse-db
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yourpassword
+      POSTGRES_DB: synapse
+    volumes:
+      - synapse-pgdata:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d synapse"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Synapse AI Memory Layer Backend
+  synapse-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: synapse-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      DATABASE_URL: postgresql://postgres:yourpassword@synapse-db:5432/synapse
+      PORT: 5000
+      JWT_SECRET: synapse_jwt_production_secret_key
+      OLLAMA_HOST: http://host.docker.internal:11434
+      OLLAMA_MODEL: llama3.2
+    depends_on:
+      synapse-db:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Visual Database GUI Manager (pgweb)
+  synapse-db-gui:
+    image: sosedoff/pgweb:latest
+    container_name: synapse-db-gui
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    command: ["/usr/bin/pgweb", "--bind=0.0.0.0", "--listen=8081", "--url=postgres://postgres:yourpassword@synapse-db:5432/synapse?sslmode=disable", "-s"]
+    depends_on:
+      synapse-db:
+        condition: service_healthy
+
+volumes:
+  synapse-pgdata:
+    name: synapse-pgdata

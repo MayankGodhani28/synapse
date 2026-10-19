@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synapse — The Memory Layer AI Forgot to Build</title>
+  <meta name="description" content="Synapse gives chatbots persistent memory and gives you a second brain — one API, two products, zero forgetting.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="landing.css">
+</head>
+<body>
+
+  <!-- 1. NAVIGATION BAR -->
+  <header class="nav-wrapper">
+    <nav class="nav-container">
+      <a href="/" class="brand-link">
+        <svg class="brand-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6l2.1 2.1M5.6 18.4l2.1-2.1m8.6-8.6l2.1-2.1"/>
+        </svg>
+        <span class="brand-name">Synapse</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="#how-it-works" class="nav-link">How it works</a>
+        <a href="#developers" class="nav-link">Developers</a>
+        <a href="#why-not-rag" class="nav-link">Why not RAG?</a>
+        <a href="/app" class="btn btn-inverted btn-sm">Get Started</a>
+      </div>
+
+      <button class="mobile-menu-toggle" id="menuToggle" aria-label="Toggle Navigation Menu">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+    </nav>
+  </header>
+
+  <!-- 2. HERO SECTION -->
+  <section class="hero-section">
+    <div class="section-container">
+      <div class="hero-content">
+        <div class="hero-text-block">
+          <h1 class="hero-headline">The memory layer AI forgot to build.</h1>
+          <p class="hero-subheadline">
+            Synapse gives chatbots persistent memory and gives you a second brain — one API, two products, zero forgetting.
+          </p>
+          <div class="hero-cta-group">
+            <a href="/app" class="btn btn-inverted btn-lg">Get Started</a>
+            <a href="#developers" class="btn btn-outline btn-lg">View Documentation</a>
+          </div>
+        </div>
+
+        <!-- Hero Diagram / Chat Memory Recall Visual -->
+        <div class="hero-visual-card">
+          <div class="terminal-bar">
+            <span class="terminal-dot"></span>
+            <span class="terminal-dot"></span>
+            <span class="terminal-dot"></span>
+            <span class="terminal-title">synapse.memory.session // live recall</span>
+          </div>
+          <div class="chat-sim">
+            <div class="chat-row user">
+              <span class="chat-label">User</span>
+              <div class="chat-bubble">"I'm vegetarian, remember that."</div>
+            </div>
+            <div class="chat-row bot">
+              <span class="chat-label">Bot</span>
+              <div class="chat-bubble">"Got it."</div>
+            </div>
+
+            <div class="time-divider">
+              <span>— days later —</span>
+            </div>
+
+            <div class="chat-row user">
+              <span class="chat-label">User</span>
+              <div class="chat-bubble">"Suggest a dinner recipe."</div>
+            </div>
+            <div class="chat-row bot">
+              <span class="chat-label">Bot</span>
+              <div class="chat-bubble recall-highlight">
+                "How about a paneer stir-fry?"
+                <span class="recall-badge">← recall: preference.dietary</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. THE PROBLEM -->
+  <section class="section problem-section" id="problem">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="eyebrow">The problem</span>
+        <h2 class="section-headline">Every AI conversation starts from zero.</h2>
+        <p class="section-body">
+          Tell a chatbot your name today, and tomorrow it has no idea who you are. The same thing happens to everything you personally save — articles, notes, links — scattered until you can't find them again.
+        </p>
+      </div>
+
+      <div class="cards-grid two-col">
+        <div class="feature-card">
+          <div class="card-icon-box">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+            </svg>
+          </div>
+          <h3 class="card-title">Chat Forgetting</h3>
+          <p class="card-description">
+            Conversations vanish the moment a session ends. Even frontier models treat repeat users like complete strangers, demanding constant context re-prompting.
+          </p>
+          <div class="card-mini-quote">
+            "Who am I again?" — every chatbot, every session.
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="card-icon-box">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+              <line x1="8" y1="10" x2="16" y2="10"/>
+            </svg>
+          </div>
+          <h3 class="card-title">Lost Bookmarks</h3>
+          <p class="card-description">
+            You save dozens of articles, papers, and code snippets across browser bookmarks, notes apps, and tabs. When you need them, search fails because you can't recall exact keywords.
+          </p>
+          <div class="card-mini-quote">
+            "I saved this exact solution last month, but where?"
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. WHAT SYNAPSE PROVIDES -->
+  <section class="section provide-section">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="eyebrow">What we provide</span>
+        <h2 class="section-headline">One memory backend. Two products.</h2>
+      </div>
+
+      <div class="cards-grid two-col">
+        <!-- Card 1 -->
+        <div class="product-pillar-card">
+          <div class="pillar-top">
+            <span class="pillar-tag">For Developers</span>
+            <h3 class="pillar-title">Memory API</h3>
+          </div>
+          <p class="pillar-body">
+            Drop our API into any existing chatbot. It extracts and stores facts from conversations, then feeds them back in — so your bot responds like it actually remembers.
+          </p>
+          <ul class="pillar-spec-list">
+            <li><span>Simple REST endpoints</span> — <code>/memory/search</code> &amp; <code>/memory/add</code></li>
+            <li><span>Vector similarity engine</span> — 384-dimensional pgvector semantic indexing</li>
+            <li><span>Strict isolation</span> — Scoped by user ID and developer API key</li>
+          </ul>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="product-pillar-card">
+          <div class="pillar-top">
+            <span class="pillar-tag">For Individuals</span>
+            <h3 class="pillar-title">Second Brain</h3>
+          </div>
+          <p class="pillar-body">
+            Save anything with one click. Ask questions in plain English later, and get answers pulled from exactly what you saved — with the source, every time.
+          </p>
+          <ul class="pillar-spec-list">
+            <li><span>One-click browser extension</span> — captures pages, selections, and notes</li>
+            <li><span>Grounded RAG chat</span> — answers cited with direct source links</li>
+            <li><span>Knowledge graph</span> — force-directed visual map of memory connections</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. HOW IT WORKS (THE PIPELINE) -->
+  <section class="section pipeline-section" id="how-it-works">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="eyebrow">How it works</span>
+        <h2 class="section-headline">From raw content to recalled memory in five steps.</h2>
+      </div>
+
+      <div class="pipeline-flow">
+        <!-- Step 1 -->
+        <div class="pipeline-step">
+          <div class="step-num-box">
+            <span class="step-num">01</span>
+            <span class="step-line"></span>
+          </div>
+          <h3 class="step-title">Capture</h3>
+          <p class="step-text">Extension or API receives content</p>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="pipeline-step">
+          <div class="step-num-box">
+            <span class="step-num">02</span>
+            <span class="step-line"></span>
+          </div>
+          <h3 class="step-title">Extract</h3>
+          <p class="step-text">A model decides what's actually worth remembering</p>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="pipeline-step">
+          <div class="step-num-box">
+            <span class="step-num">03</span>
+            <span class="step-line"></span>
+          </div>
+          <h3 class="step-title">Embed &amp; Store</h3>
+          <p class="step-text">Content is vectorized and stored per user</p>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="pipeline-step">
+          <div class="step-num-box">
+            <span class="step-num">04</span>
+            <span class="step-line"></span>
+          </div>
+          <h3 class="step-title">Retrieve</h3>
+          <p class="step-text">A new query is matched by meaning, not keywords</p>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="pipeline-step">
+          <div class="step-num-box">
+            <span class="step-num">05</span>
+          </div>
+          <h3 class="step-title">Respond</h3>
+          <p class="step-text">Retrieved facts are woven into the answer</p>
+        </div>
+      </div>
+
+      <div class="pipeline-callout">
+        <p>
+          "This is harder than plain search — retrieval finds the same content for everyone; memory tracks what's true for one specific user, and updates when it changes."
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. DEVELOPER GUIDE -->
+  <section class="section dev-section" id="developers">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="eyebrow">For developers</span>
+        <h2 class="section-headline">Add memory to your chatbot in two calls.</h2>
+      </div>
+
+      <!-- Code Terminal -->
+      <div class="editor-window">
+        <div class="editor-titlebar">
+          <div class="editor-dots">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+          </div>
+          <span class="editor-filename">synapse-integration.js</span>
+          <div class="editor-lang">JavaScript (ES6)</div>
+        </div>
+
+        <div class="editor-codeblock">
+          <pre><code><span class="code-comment">// 1. Before generating a reply — pull relevant memories</span>
+<span class="code-keyword">const</span> res = <span class="code-keyword">await</span> fetch(<span class="code-string">"https://api.synapse.dev/memory/search"</span>, {
+  method: <span class="code-string">"POST"</span>,
+  headers: {
+    <span class="code-string">"Authorization"</span>: <span class="code-string">"Bearer YOUR_API_KEY"</span>,
+    <span class="code-string">"Content-Type"</span>: <span class="code-string">"application/json"</span>
+  },
+  body: JSON.stringify({ user_id: <span class="code-string">"user_123"</span>, query: userMessage })
+});
+<span class="code-keyword">const</span> { results } = <span class="code-keyword">await</span> res.json();
+
+<span class="code-comment">// 2. After the exchange — store anything new worth remembering</span>
+<span class="code-keyword">await</span> fetch(<span class="code-string">"https://api.synapse.dev/memory/add"</span>, {
+  method: <span class="code-string">"POST"</span>,
+  headers: {
+    <span class="code-string">"Authorization"</span>: <span class="code-string">"Bearer YOUR_API_KEY"</span>,
+    <span class="code-string">"Content-Type"</span>: <span class="code-string">"application/json"</span>
+  },
+  body: JSON.stringify({ user_id: <span class="code-string">"user_123"</span>, content: userMessage, source_type: <span class="code-string">"chat"</span> })
+});</code></pre>
+        </div>
+      </div>
+
+      <!-- Plain Text Numbered Steps -->
+      <div class="dev-steps-list">
+        <div class="dev-step-item">
+          <span class="dev-step-digit">1.</span>
+          <p class="dev-step-desc">Sign up and generate an API key from your dashboard</p>
+        </div>
+        <div class="dev-step-item">
+          <span class="dev-step-digit">2.</span>
+          <p class="dev-step-desc">Call <code>/memory/search</code> before your LLM call to inject relevant facts into your prompt</p>
+        </div>
+        <div class="dev-step-item">
+          <span class="dev-step-digit">3.</span>
+          <p class="dev-step-desc">Call <code>/memory/add</code> after each exchange to keep memory current</p>
+        </div>
+      </div>
+
+      <div class="dev-link-wrap">
+        <a href="/app" class="text-arrow-link">Read full documentation &rarr;</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. WHY NOT JUST USE RAG? (INVERTED CONTRAST SECTION) -->
+  <section class="section inverted-section" id="why-not-rag">
+    <div class="section-container">
+      <div class="inverted-content-box">
+        <h2 class="inverted-headline">Memory isn't the same thing as search.</h2>
+        <p class="inverted-body">
+          Retrieval-augmented generation finds the same chunks for anyone asking a similar question. Memory is different — it tracks what's true for one specific person over time, and knows when a new fact should replace an old one. That's the harder, more useful problem Synapse solves.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. FINAL CTA -->
+  <section class="section final-cta-section">
+    <div class="section-container">
+      <div class="cta-box">
+        <h2 class="cta-headline">Stop building chatbots with amnesia.</h2>
+        <p class="cta-subheadline">Get an API key and add persistent memory in minutes.</p>
+        <div class="cta-btn-wrap">
+          <a href="/app" class="btn btn-inverted btn-xl">Get Started &mdash; it's free</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. FOOTER -->
+  <footer class="site-footer">
+    <div class="section-container">
+      <div class="footer-grid">
+        <div class="footer-brand-col">
+          <a href="/" class="brand-link">
+            <span class="brand-name">Synapse</span>
+          </a>
+          <p class="footer-tagline">The persistent memory and knowledge layer for AI systems and individuals.</p>
+        </div>
+
+        <div class="footer-links-col">
+          <h4 class="footer-col-title">Product</h4>
+          <ul class="footer-nav">
+            <li><a href="#how-it-works">How it works</a></li>
+            <li><a href="#developers">Developers</a></li>
+            <li><a href="/app">Memory Vault</a></li>
+            <li><a href="/app">API Keys</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <h4 class="footer-col-title">Company</h4>
+          <ul class="footer-nav">
+            <li><a href="#problem">About</a></li>
+            <li><a href="/app">Documentation</a></li>
+            <li><a href="https://github.com" target="_blank" rel="noreferrer">GitHub</a></li>
+            <li><a href="/app">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom-bar">
+        <p class="copyright">&copy; 2026 Synapse Technologies. All rights reserved.</p>
+        <p class="footer-meta">Powered by pgvector &amp; BAAI/bge-small-en-v1.5</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Smooth reveal animations on scroll
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in-view');
+        }
+      });
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll('.feature-card, .product-pillar-card, .pipeline-step, .editor-window, .cta-box, .inverted-content-box').forEach(el => {
+      el.classList.add('reveal-on-scroll');
+      observer.observe(el);
+    });
+
+    // Mobile nav toggle
+    const toggle = document.getElementById('menuToggle');
+    const navLinks = document.querySelector('.nav-links');
+    if (toggle && navLinks) {
+      toggle.addEventListener('click', () => {
+        navLinks.classList.toggle('open');
+      });
+    }
+  </script>
+</body>
+</html>
