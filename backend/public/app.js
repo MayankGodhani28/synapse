@@ -656,6 +656,7 @@ function showAuthAlert(message, type = 'error') {
 }
 
 function handleLogout() {
+  window.synapseLogout().catch(console.error);
   authToken = null;
   currentUser = null;
   localStorage.removeItem('synapse_token');
