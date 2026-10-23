@@ -126,6 +126,7 @@ const selectExtConsole = document.getElementById('selectExtConsole');
 document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners();
   checkBackendHealth();
+  await window.synapseAuthReady;
   await checkAuthSession();
   initGoogleAuth();
 
@@ -614,86 +615,12 @@ let googleAuthEnabled = false;
 let googleClientId = null;
 
 async function initGoogleAuth() {
-  try {
-    const res = await fetch(`${API_BASE}/auth/config`);
-    const data = await res.json();
-    if (data && data.googleClientId) {
-      googleClientId = data.googleClientId;
-      googleAuthEnabled = true;
-
-      // Wait for Google Identity Services script to be available
-      let attempts = 0;
-      const checkGsi = setInterval(() => {
-        attempts++;
-        if (window.google && window.google.accounts && window.google.accounts.id) {
-          clearInterval(checkGsi);
-          try {
-            window.google.accounts.id.initialize({
-              client_id: googleClientId,
-              callback: handleGoogleCredentialResponse,
-              auto_select: false,
-            });
-
-            const container = document.getElementById('googleSignInBtn');
-            if (container) {
-              window.google.accounts.id.renderButton(container, {
-                theme: 'outline',
-                size: 'large',
-                width: 320,
-                text: 'continue_with',
-                shape: 'rectangular',
-                logo_alignment: 'left',
-              });
-              const styledBtn = document.getElementById('styledGoogleBtn');
-              if (styledBtn) styledBtn.style.display = 'none';
-            }
-          } catch (e) {
-            console.error('[auth] Error initializing Google button:', e);
-          }
-        } else if (attempts > 40) {
-          clearInterval(checkGsi);
-          console.warn('[auth] Google Identity Services took too long to load.');
-        }
-      }, 150);
-    }
-  } catch (err) {
-    console.warn('[auth] Could not load auth config:', err);
-  }
+  googleAuthEnabled = true;
 }
 
-async function handleGoogleCredentialResponse(response) {
-  if (!response || !response.credential) return;
-  showAuthAlert(null);
-
-  try {
-    const res = await fetch(`${API_BASE}/auth/google`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ credential: response.credential }),
-    });
-
-    const data = await res.json();
-    if (!res.ok || !data.success) {
-      showAuthAlert(data.error || 'Google sign-in failed. Please try again.', 'error');
-      return;
-    }
-
-    authToken = data.token;
-    localStorage.setItem('synapse_token', authToken);
-    try {
-      window.postMessage({ type: 'SYNAPSE_AUTH_LOGIN', token: authToken }, '*');
-    } catch {}
-    renderAuthState(data.user);
-    activeUserId = data.user.email;
-
-    showAuthAlert('Signed in with Google!', 'success');
-    setTimeout(() => {
-      authModal.classList.remove('open');
-      showServiceSelector();
-    }, 600);
-  } catch (err) {
-    showAuthAlert('Google Sign-In error: ' + err.message, 'error');
-  }
+async function handleGoogleCredentialResponse() {
+  const { error } = await window.synapseGoogleLogin();
+  if (error) showAuthAlert(error.message, 'error');
 }
 
 function showGoogleView(view) {
@@ -707,20 +634,12 @@ function showGoogleView(view) {
   }
 }
 
-function handleStyledGoogleClick() {
-  if (!googleAuthEnabled) {
-    showAuthAlert('Google Sign-In is enabled! Please paste your GOOGLE_CLIENT_ID in backend/.env to connect your Google Cloud credentials.', 'error');
-    return;
-  }
-  if (googleSignInBtn) {
-    const btn = googleSignInBtn.querySelector('div[role="button"]');
-    if (btn) {
-      btn.click();
-      return;
-    }
-  }
-  if (window.google && window.google.accounts && window.google.accounts.id) {
-    window.google.accounts.id.prompt();
+async function handleStyledGoogleClick() {
+  try {
+    const { error } = await window.synapseGoogleLogin();
+    if (error) showAuthAlert(error.message, 'error');
+  } catch (error) {
+    showAuthAlert(error.message, 'error');
   }
 }
 
