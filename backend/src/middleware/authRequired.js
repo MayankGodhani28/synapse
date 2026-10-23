@@ -18,7 +18,7 @@ async function verifyUser(token) {
   }
   const header = jwt.decode(token, { complete: true });
   if (!header || !['RS256', 'ES256'].includes(header.header.alg)) throw new Error('Unsupported token');
-  const key = cachedKeys.find(k => k.kid === header.header.kid && k.alg === header.header.alg);
+  const key = cachedKeys.find(k => k.kid === header.header.kid && (!k.alg || k.alg === header.header.alg));
   if (!key) throw new Error('Unknown signing key');
   const cryptoKey = crypto.createPublicKey({ key, format: 'jwk' });
   const payload = jwt.verify(token, cryptoKey, {
