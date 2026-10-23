@@ -9,9 +9,12 @@ router.get('/config', (_req, res) => {
   res.json({ supabaseUrl: url, supabasePublishableKey: key, hasGoogleAuth: true });
 });
 
-router.get('/me', authRequired, (req, res) => {
+router.get('/me', authRequired, async (req, res) => {
   if (req.authMode !== 'supabase') return res.status(403).json({ error: 'User session required' });
-  res.json({ authenticated: true, user: { id: req.userId, email: req.userEmail, name: req.userName, picture: null } });
+  try {
+    await pool.query(`INSERT INTO users (id, email, display_name, last_login_at) VALUES ($1,$2,$3,NOW()) ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, last_login_at = NOW()`, [req.userId, req.userEmail, req.userName]);
+    res.json({ authenticated: true, user: { id: req.userId, email: req.userEmail, name: req.userName, picture: null } });
+  } catch (err) { res.status(500).json({ error: 'Failed to provision user profile' }); }
 });
 
 router.get('/users', authRequired, async (req, res) => {
