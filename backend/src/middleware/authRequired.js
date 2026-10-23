@@ -1,31 +1,32 @@
-const { createRemoteJWKSet, jwtVerify } = require('jose');
+const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const pool = require('../db');
 
-let jwks;
-let issuer;
-
-function getVerifier() {
-  const url = process.env.SUPABASE_URL;
-  if (!url) throw new Error('SUPABASE_URL is not configured');
-  const base = url.replace(/\/$/, '');
-  if (!jwks || issuer !== base + '/auth/v1') {
-    issuer = base + '/auth/v1';
-    jwks = createRemoteJWKSet(new URL(issuer + '/.well-known/jwks.json'));
-  }
-  return { jwks, issuer };
-}
+let cachedKeys = [];
+let cachedAt = 0;
 
 async function verifyUser(token) {
-  const { jwks, issuer } = getVerifier();
-  const { payload } = await jwtVerify(token, jwks, {
-    issuer,
-    audience: 'authenticated',
-    algorithms: ['RS256', 'ES256'],
-  });
-  if (!payload.sub || payload.role !== 'authenticated' || payload.is_anonymous === true) {
-    throw new Error('Invalid authenticated identity');
+  const base = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
+  if (!base) throw new Error('SUPABASE_URL is not configured');
+  const now = Date.now();
+  if (!cachedKeys.length || now - cachedAt > 3600000) {
+    const response = await fetch(base + '/auth/v1/.well-known/jwks.json');
+    if (!response.ok) throw new Error('Unable to fetch Supabase signing keys');
+    const json = await response.json();
+    cachedKeys = Array.isArray(json.keys) ? json.keys : [];
+    cachedAt = now;
   }
+  const header = jwt.decode(token, { complete: true });
+  if (!header || !['RS256', 'ES256'].includes(header.header.alg)) throw new Error('Unsupported token');
+  const key = cachedKeys.find(k => k.kid === header.header.kid && k.alg === header.header.alg);
+  if (!key) throw new Error('Unknown signing key');
+  const cryptoKey = crypto.createPublicKey({ key, format: 'jwk' });
+  const payload = jwt.verify(token, cryptoKey, {
+    algorithms: ['RS256', 'ES256'],
+    issuer: base + '/auth/v1',
+    audience: 'authenticated',
+  });
+  if (!payload.sub || payload.role !== 'authenticated' || payload.is_anonymous === true) throw new Error('Invalid identity');
   return payload;
 }
 
