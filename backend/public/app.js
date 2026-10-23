@@ -573,6 +573,7 @@ function setupEventListeners() {
 // AUTHENTICATION
 // ============================================================================
 async function checkAuthSession() {
+  authToken = localStorage.getItem('synapse_token') || null;
   if (!authToken) {
     renderAuthState(null);
     return;
