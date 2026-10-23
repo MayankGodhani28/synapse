@@ -12,7 +12,8 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="index.css">
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="/supabase-auth.js"></script>
 </head>
 
 <body>
@@ -555,7 +556,7 @@ POST /memory/add
         </p>
 
         <!-- Official Google Button target -->
-        <div id="googleSignInBtn" style="display: flex; justify-content: center; width: 100%; min-height: 44px; margin-bottom: 12px;"></div>
+        <div id="googleSignInBtn" style="display:none"></div>
 
         <!-- Styled fallback button if GSI button is loading or awaiting client id -->
         <button type="button" class="btn-google-action" id="styledGoogleBtn">
