@@ -1,105 +1,80 @@
-/**
- * Auth Required Middleware — Strict Authentication Gate
- *
- * Combines JWT + API key authentication into a single middleware.
- * - If JWT is valid → sets req.effectiveUserId from the token (can't be spoofed)
- * - Else if API key is valid → sets req.effectiveUserId from the body user_id (developer flow)
- * - If neither → returns 401
- *
- * Also sets:
- *   req.authMode = 'jwt' | 'apikey'
- *   req.effectiveUserId = the user ID to use for all scoped queries
- */
-
-const jwt = require('jsonwebtoken');
+const { createRemoteJWKSet, jwtVerify } = require('jose');
 const crypto = require('crypto');
 const pool = require('../db');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'synapse-default-secret-change-me';
+let jwks;
+let issuer;
 
-function hashKey(key) {
-  return crypto.createHash('sha256').update(key).digest('hex');
+function getVerifier() {
+  const url = process.env.SUPABASE_URL;
+  if (!url) throw new Error('SUPABASE_URL is not configured');
+  const base = url.replace(/\/$/, '');
+  if (!jwks || issuer !== base + '/auth/v1') {
+    issuer = base + '/auth/v1';
+    jwks = createRemoteJWKSet(new URL(issuer + '/.well-known/jwks.json'));
+  }
+  return { jwks, issuer };
+}
+
+async function verifyUser(token) {
+  const { jwks, issuer } = getVerifier();
+  const { payload } = await jwtVerify(token, jwks, {
+    issuer,
+    audience: 'authenticated',
+    algorithms: ['RS256', 'ES256'],
+  });
+  if (!payload.sub || payload.role !== 'authenticated' || payload.is_anonymous === true) {
+    throw new Error('Invalid authenticated identity');
+  }
+  return payload;
+}
+
+async function apiKeyIdentity(key) {
+  const hash = crypto.createHash('sha256').update(key).digest('hex');
+  const result = await pool.query(
+    `SELECT ak.id AS key_id, ak.app_name, ak.developer_id,
+            aku.user_id AS scope
+       FROM api_keys ak
+       JOIN api_key_users aku ON aku.api_key_id = ak.id
+      WHERE ak.key_hash = $1
+      ORDER BY aku.created_at ASC LIMIT 1`,
+    [hash]
+  );
+  return result.rows[0];
 }
 
 async function authRequired(req, res, next) {
-  // ── 1. Try JWT from Authorization header ──────────────────
-  const authHeader = req.headers['authorization'];
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.split(' ')[1];
-    try {
-      const decoded = jwt.verify(token, JWT_SECRET);
-      req.userId = decoded.userId;
-      req.userEmail = decoded.email;
-      req.userName = decoded.name;
-      req.authMode = 'jwt';
-
-      // If this is an extension request, preserve the extension scope
-      const reqUserId = req.body?.user_id || req.query?.user_id;
-      if (reqUserId && String(reqUserId).startsWith('extension(')) {
-        req.effectiveUserId = String(reqUserId).trim();
-      } else {
-        req.effectiveUserId = decoded.userId;
-      }
-
-      // Also inject into body/query for backward compat with routes
-      if (!req.body.user_id) req.body.user_id = req.effectiveUserId;
-      if (!req.query.user_id) req.query.user_id = req.effectiveUserId;
-
-      return next();
-    } catch (err) {
-      console.warn('[authRequired] JWT verification note:', err.message);
-      // Fall through to API key or body user_id passthrough
+  try {
+    const authorization = req.get('authorization') || '';
+    const apiKey = req.get('x-api-key');
+    if (authorization.startsWith('Bearer ')) {
+      const identity = await verifyUser(authorization.slice(7));
+      req.authMode = 'supabase';
+      req.userId = identity.sub;
+      req.userEmail = identity.email;
+      req.userName = identity.email;
+      req.effectiveUserId = identity.sub;
+    } else if (apiKey) {
+      const identity = await apiKeyIdentity(apiKey);
+      if (!identity) return res.status(401).json({ error: 'Invalid API key' });
+      req.authMode = 'apikey';
+      req.apiKeyId = identity.key_id;
+      req.apiKeyUserId = identity.scope;
+      req.apiKeyAppName = identity.app_name;
+      req.userId = identity.developer_id || identity.scope;
+      req.effectiveUserId = identity.scope;
+    } else {
+      return res.status(401).json({ error: 'Sign in or provide a valid API key' });
     }
+    req.body = req.body || {};
+    req.body.user_id = req.effectiveUserId;
+    req.query.user_id = req.effectiveUserId;
+    next();
+  } catch (err) {
+    if (err.message === 'SUPABASE_URL is not configured') return res.status(503).json({ error: 'Authentication not configured' });
+    return res.status(401).json({ error: 'Invalid or expired credentials' });
   }
-
-  // ── 2. Try API key from x-api-key header ──────────────────
-  const apiKey = req.headers['x-api-key'];
-  if (apiKey) {
-    try {
-      const hashed = hashKey(apiKey);
-      const result = await pool.query(
-        `SELECT aku.user_id, ak.app_name, ak.id AS key_id
-         FROM api_keys ak
-         JOIN api_key_users aku ON ak.id = aku.api_key_id
-         WHERE ak.key_hash = $1`,
-        [hashed]
-      );
-
-      if (result.rows.length > 0) {
-        req.apiKeyUserId = result.rows[0].user_id;
-        req.apiKeyAppName = result.rows[0].app_name;
-        req.apiKeyId = result.rows[0].key_id;
-        req.authMode = 'apikey';
-
-        // For API key flow, trust the body user_id (developer's chatbot user)
-        // or fall back to the key's registered user
-        req.effectiveUserId = req.body.user_id || result.rows[0].user_id;
-
-        // Inject into query for GET routes
-        if (!req.query.user_id) req.query.user_id = req.effectiveUserId;
-
-        // Track usage
-        pool.query('UPDATE api_keys SET last_used_at = NOW() WHERE id = $1', [req.apiKeyId]).catch(() => {});
-
-        return next();
-      }
-    } catch (err) {
-      console.error('[authRequired] API key validation error:', err.message);
-    }
-  }
-
-  // ── 3. Allow passthrough for requests with user_id in body/query ──
-  // This maintains backward compat with the existing web UI and extension
-  // that send user_id directly without auth headers
-  const bodyUserId = req.body.user_id || req.query.user_id;
-  if (bodyUserId) {
-    req.authMode = 'passthrough';
-    req.effectiveUserId = bodyUserId;
-    return next();
-  }
-
-  // ── 4. No valid auth found ────────────────────────────────
-  return res.status(401).json({ error: 'Authorization required. Provide a JWT token or API key.' });
 }
 
 module.exports = authRequired;
+module.exports.verifyUser = verifyUser;
